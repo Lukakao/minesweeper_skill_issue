@@ -11,6 +11,11 @@ class Grid:
         print(self.grid)
 
 
+class Celda:
+    def __init__(self):
+        self.conocida = False
+        self.num = -1
+        self.lista = False
 
 
 g = Grid(2,3)
