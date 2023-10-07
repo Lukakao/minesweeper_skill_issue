@@ -17,8 +17,6 @@ def rPos():
     return (random.randint(1,size_w-1),random.randint(1,size_h-1))
 
 
-
-
 pL = pyautogui.center(pyautogui.locateOnScreen("izq.PNG"))
 pL = (pL[0]+6, pL[1]-2, 0, 0)
 pyautogui.moveTo(pL)
@@ -46,11 +44,7 @@ def color(x,y):
 size_h = int((pL[1]-pA[1]+4)/16)
 size_w = int((pR[0]-pL[0])/16)
 
-print(size_h)
-print(size_w)
-
-
-# (192,192,192) -> 0 y si 6 pixeles arriba es (255,255,255) -> sin clickear (9)
+# (192,192,192) -> 0 y si 2 pixeles arriba es (255,255,255) -> sin clickear (9)
 # (0,0,255)     -> 1
 # (0,128,0)     -> 2
 # (255,0,0)     -> 3
@@ -60,43 +54,60 @@ print(size_w)
 # (0, 0, 0)     -> 7 revisar si se murio primero
 # (0, 0, 0) -> mina
 
-
 grid = Grid(size_w,size_h)
 
-def actualizar_grid(gr, color, x, y):
+
+
+def see_num_celda(x, y):
+    color = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
     if color == (192,192,192):
-        if pyautogui.pixel(x*16,y*16+6) == (255,255,255):
-            gr.set_celda(x,y,9)
+        if pyautogui.pixel(pA[0]+x*16,pA[1]+y*16-2) == (255,255,255):
+            return 9 # sin clickear
         else:
-            gr.set_celda(x,y,0)
+            return 0 # vacio
     elif color == (0,0,255):
-        gr.set_celda(x,y,1)
-
+        return 1
     elif color == (0,128,0):
-        gr.set_celda(x,y,2)
-
+        return 2
     elif color == (255,0,0):
-        gr.set_celda(x,y,3)
-
+        return 3
     elif color == (0, 0, 128):
-        gr.set_celda(x,y,4)
+        return 4
+    elif color == (128, 0, 0):
+        return 5
+    elif color == (0, 0, 0):
+        return 7
+    elif color == (128, 128, 128):
+        return 5
 
+def flood_fill(x,y):
+    if x < 0 or x >= size_w or y < 0 or y >= size_h:
+        return
+    if grid.get_simcelda(x,y) == 1:
+        return
+    celda_actual_color = see_num_celda(x,y)
+    if celda_actual_color == 9:
+        return
+    grid.set_simcelda(x,y)
+    grid.set_celda(x, y, celda_actual_color)
+    flood_fill(x+1, y)
+    flood_fill(x-1, y)
+    flood_fill(x, y+1)
+    flood_fill(x, y-1)
 
 for a in range(0,10):
     x,y = rPos()
-    print("rpos ", x,y)
     click(x,y)
     if isDead(): break
-    c = color(x,y)
-    print(c)
-    actualizar_grid(grid,c, x, y)
+    print("pos ", x, y)
+    celda_num = see_num_celda(x, y)
+    print("num ", celda_num)
+    grid.set_celda(x,y,celda_num)
 
+    flood_fill(x,y)
 
 grid.mostrar()
-print("aa")
-#for x in range(0,16,2):
- #   for y in range(0,16,2):
-   #     pyautogui.moveTo(pA[0]+x,pA[1]+y)
-   #     print(pyautogui.pixel(pA[0]+x,pA[1]+y))
+print("----------------------------")
 
+grid.mostrar_sim()
 
