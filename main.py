@@ -62,6 +62,9 @@ def color(x,y):
     c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
     return c
 
+def flagear(x,y):
+    pyautogui.click(pA[0]+x*16,pA[1]+y*16, button='right')
+
 
 # (192,192,192) -> 0 y si 2 pixeles arriba es (255,255,255) -> sin clickear (9)
 # (0,0,255)     -> 1
@@ -114,7 +117,26 @@ def flood_fill(x,y):
 
 def resolver_celda(x,y):
     # ver celdas adyacentes
-    pass
+    if x < 0 or x >= size_w or y < 0 or y >= size_h:
+        return
+    actual = grid.get_simcelda(x,y)
+    if actual == 1:
+        pass
+
+
+
+#    resolver_celda(x+1, y)
+#    resolver_celda(x+1, y+1)
+ #   resolver_celda(x, y+1)
+  #  resolver_celda(x-1, y+1)
+   # resolver_celda(x-1, y-1)
+    #resolver_celda(x, y-1)
+    #resolver_celda(x+1, y-1)
+
+
+
+    # si hay una celda resuelta todas sus celdas se liberan
+
 
 
 pos_used = []
@@ -129,6 +151,7 @@ for a in range(0,10):
     pos_used.append(p)
     if click(x,y):
         break
+    # por cada borde resolver
     
 
 
@@ -137,10 +160,10 @@ for a in range(0,10):
 
 grid.mostrar()
 print("-"*(2*size_w+size_w))
-grid.mostrar_sim()
+#grid.mostrar_sim()
 bordes = grid.get_bordes()
 print("bordes ", bordes )
-for i in range(0,len(bordes)):
-    mover(bordes[i][0], bordes[i][1])
-    time.sleep(0.1)
+#for i in range(0,len(bordes)):
+   # mover(bordes[i][0], bordes[i][1])
+   # time.sleep(0.1)
 

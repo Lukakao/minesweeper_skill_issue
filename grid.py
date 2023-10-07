@@ -9,24 +9,21 @@ class Grid:
         self.simgrid = [[0 for i in range(h)] for j in range(w)]  # 1 es chequeado, 0 es no
         self.bordes = []
 
+    def celda_isResuelta(self,x,y):
+        return self.grid.isResuelta()
+
 
     def mostrar(self):
         for x in range(0,self.h):
             s = ''
-            a = ''
-            b = '  '
+            a = ' '
             for y in range(0,self.w):
                 num = self.grid[y][x].getNum()
-                if y == 0 and num != -1:
-                    a = ' '
-                else:
-                    a = ''
-                if y+1 < self.w:
-                    if self.grid[y+1][x].getNum() == -1:
-                        b = ' '
-                    else:
-                        b = '  '
-                s = s + a + str(num) + b
+                if num == -1:
+                    num = '□'
+                elif num == 0:
+                    num = ' '
+                s = s + a + str(num) + a
             print(s)
 
     def mostrar_sim(self):
@@ -99,6 +96,8 @@ class Celda:
     def getNum(self):
         return self.num
     
+    def isResuelta(self):
+        return self.lista
 
 
 
