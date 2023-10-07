@@ -34,15 +34,23 @@ pyautogui.click(pS[0]-4,pS[1]+6)
 pyautogui.click()
 
 
+# tile size 16px
+size_h = int((pL[1]-pA[1]+4)/16)
+size_w = int((pR[0]-pL[0])/16)
+
+grid = Grid(size_w,size_h)
+
+
+def mover(x,y):
+    pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
 def click(x,y):
     pyautogui.click(pA[0]+x*16,pA[1]+y*16)
+    # sacar de bordes
+    grid.eliminar_celda_bordes(x,y)
 def color(x,y):
     c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
     return c
 
-# tile size 16px
-size_h = int((pL[1]-pA[1]+4)/16)
-size_w = int((pR[0]-pL[0])/16)
 
 # (192,192,192) -> 0 y si 2 pixeles arriba es (255,255,255) -> sin clickear (9)
 # (0,0,255)     -> 1
@@ -53,11 +61,7 @@ size_w = int((pR[0]-pL[0])/16)
 # (160, 0, 0)   -> 6
 # (0, 0, 0)     -> 7 revisar si se murio primero
 # (0, 0, 0) -> mina
-
-grid = Grid(size_w,size_h)
-
-
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
 def see_num_celda(x, y):
     color = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
     if color == (192,192,192):
@@ -87,6 +91,7 @@ def flood_fill(x,y):
         return
     celda_actual_color = see_num_celda(x,y)
     if celda_actual_color == 9:
+        grid.add_borde((x,y))
         return
     grid.set_simcelda(x,y)
     grid.set_celda(x, y, celda_actual_color)
@@ -95,19 +100,37 @@ def flood_fill(x,y):
     flood_fill(x, y+1)
     flood_fill(x, y-1)
 
+
+def resolver_celda():
+    pass
+
+
+
+pos_used = []
 for a in range(0,10):
-    x,y = rPos()
+    repetido = True
+    while repetido:
+        x,y = rPos()
+        p = (x,y)
+        if p in pos_used:
+            continue
+        else: repetido = False
+    pos_used.append(p)
     click(x,y)
     if isDead(): break
-    print("pos ", x, y)
     celda_num = see_num_celda(x, y)
-    print("num ", celda_num)
     grid.set_celda(x,y,celda_num)
 
     flood_fill(x,y)
-
+    grid.eliminar_repetidos_bordes()
 grid.mostrar()
-print("----------------------------")
+print("-"*(2*size_w+size_w))
 
 grid.mostrar_sim()
+
+bordes = grid.get_bordes()
+print("bordes ", bordes )
+for i in range(0,len(bordes)):
+    mover(bordes[i][0], bordes[i][1])
+    time.sleep(0.1)
 
