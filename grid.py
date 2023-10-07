@@ -36,6 +36,13 @@ class Grid:
                 s = s + str(self.simgrid[y][x]) + '  '
             print(s)
 
+    def revisar_bordes_no_existentes(self): # creo que esta no es tan necesaria, ya al tiro se puede saber si la celda no existente, no existe (lol)
+        for i in range(0,len(self.bordes)-1):
+            actual = self.bordes[i]
+            if self.simgrid[actual[0]][actual[1]] == 1:
+                # esta celda ya se exploró
+                self.eliminar_celda_bordes(actual[0],actual[1])
+
     def eliminar_repetidos_bordes(self):
         res = []
         [res.append(x) for x in self.bordes if x not in res]

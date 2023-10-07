@@ -43,10 +43,21 @@ grid = Grid(size_w,size_h)
 
 def mover(x,y):
     pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
+
 def click(x,y):
     pyautogui.click(pA[0]+x*16,pA[1]+y*16)
     # sacar de bordes
+    if isDead():
+        return True
     grid.eliminar_celda_bordes(x,y)
+    #celda_num = see_num_celda(x, y)
+    #grid.set_celda(x,y,celda_num)
+    flood_fill(x,y)
+    grid.eliminar_repetidos_bordes()
+    grid.revisar_bordes_no_existentes()
+    return False
+
+
 def color(x,y):
     c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
     return c
@@ -101,9 +112,9 @@ def flood_fill(x,y):
     flood_fill(x, y-1)
 
 
-def resolver_celda():
+def resolver_celda(x,y):
+    # ver celdas adyacentes
     pass
-
 
 
 pos_used = []
@@ -116,18 +127,17 @@ for a in range(0,10):
             continue
         else: repetido = False
     pos_used.append(p)
-    click(x,y)
-    if isDead(): break
-    celda_num = see_num_celda(x, y)
-    grid.set_celda(x,y,celda_num)
+    if click(x,y):
+        break
+    
 
-    flood_fill(x,y)
-    grid.eliminar_repetidos_bordes()
+
+
+
+
 grid.mostrar()
 print("-"*(2*size_w+size_w))
-
 grid.mostrar_sim()
-
 bordes = grid.get_bordes()
 print("bordes ", bordes )
 for i in range(0,len(bordes)):
