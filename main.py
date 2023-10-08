@@ -6,7 +6,7 @@ from grid import Grid
 from grid import Celda
 
 pyautogui.FAILSAFE = True
-
+pyautogui.PAUSE = 0
 # (192,192,192) -> 0 y si 2 pixeles arriba es (255,255,255) -> sin clickear (9)
 # (0,0,255)     -> 1
 # (0,128,0)     -> 2
@@ -23,7 +23,7 @@ ganado = False
 offsets = [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)]
 
 def isDead(img):
-    pixel = img.getpixel((pS[0]-4,pS[1]+6))
+    pixel = img.getpixel((4,3))
     if pixel[0] == 0:
         global alive
         alive = False
@@ -33,7 +33,7 @@ def isDead(img):
         return False
     
 def isGanado(img):
-    pixel = img.getpixel((pS[0]-7,pS[1]+10))
+    pixel = img.getpixel((1,7))
     if pixel[0] == 0:
         global ganado
         ganado = True
@@ -45,8 +45,9 @@ def rPos():
         y = random.randint(1,size_h-1)
         if (x,y) in pos_used:
             continue
-        if grid.get_simcelda(x,y) == 0:
-            return (x,y)
+        #if grid.get_simcelda(x,y) == 0:
+        pos_used.append((x,y))
+        return (x,y)
         
 
 pL = pyautogui.center(pyautogui.locateOnScreen("izq.PNG"))
@@ -77,14 +78,17 @@ def mover(x,y):
     pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
 
 def click(x,y):
-    if grid.get_celda(x,y).isResuelta():
+    cel = grid.get_celda(x,y)
+    if cel.isResuelta():
+        return
+    if cel.getNum() != -1:
         return
     pyautogui.click(pA[0]+x*16,pA[1]+y*16)
     im = pyautogui.screenshot(region=reg)
-    im.show()
-    if isDead(im):
+    imstate = pyautogui.screenshot(region=(pS[0]-8,pS[1]+3,6,10))
+    if isDead(imstate):
         return
-    if isGanado(im):
+    if isGanado(imstate):
         return
     grid.eliminar_celda_bordes(x,y)
     # temp lista bordes []
@@ -95,9 +99,6 @@ def click(x,y):
     for pos in bordes:
         resolver_celda(pos[0],pos[1])
 
-def color(x,y):
-    c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
-    return c
 
 def flagear(x,y):
     if grid.get_celda(x,y).isResuelta():
@@ -108,9 +109,10 @@ def flagear(x,y):
     grid.set_celda(x,y,10)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 def see_num_celda(img, x, y):
-    color = img.getpixel( (pA[0]+x*16,pA[1]+y*16))
+    color = img.getpixel( (x*16+9,y*16+3))
+
     if color == (192,192,192):
-        if img.getpixel((pA[0]+x*16,pA[1]+y*16-2)) == (255,255,255):
+        if img.getpixel((x*16+9,y*16-2+3)) == (255,255,255):
             return 9 # sin clickear
         else:
             return 0 # vacio
@@ -127,13 +129,17 @@ def see_num_celda(img, x, y):
     elif color == (0, 0, 0):
         return 7
     elif color == (128, 128, 128):
-        return 5
+        return 8
 
 def flood_fill(img, x,y):
     if x < 0 or x >= size_w or y < 0 or y >= size_h:
         return
     if grid.get_simcelda(x,y) == 1:
         return
+    cel = grid.get_celda(x,y)
+    if cel.getNum() == 0:
+        cel.set_resuelta()
+
     celda_actual_color = see_num_celda(img,x,y)
     if celda_actual_color == 9:
         grid.add_borde((x,y))
@@ -191,22 +197,19 @@ def resolver_celda(x,y): # resolviendo una celda no explorada (borde)
 
 pos_used = []
 
-def main():
-    click(0,0)
+
+click(0,0)
+click(0,size_h-1)
+click(size_w-1,0)
+click(size_w-1,size_h-1)
+while alive and not ganado:
+    x,y = rPos()
+    click(x,y)
+    # por cada borde resolver
+
     
-    while alive and not ganado:
-        x,y = rPos()
-        pos_used.append((x,y))
-        click(x,y)
-        # por cada borde resolver
-    
-        
 
-    #grid.mostrar()
-    #print("-"*(2*size_w+size_w))
-    #grid.mostrar_sim()
+grid.mostrar()
+print("-"*(2*size_w+size_w))
+grid.mostrar_sim()
 
-
-
-
-main()
