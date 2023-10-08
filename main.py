@@ -1,73 +1,12 @@
+import sys
 import pyautogui
 import time
 import random 
 from grid import Grid
 from grid import Celda
+import threading
+
 pyautogui.FAILSAFE = True
-
-offsets = [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)]
-
-def isDead():
-    pixel = pyautogui.pixel(pS[0]-4,pS[1]+6)
-    if pixel[0] == 0:
-        print("Se murio")
-        return True
-    else:
-        return False
-
-def rPos():
-    return (random.randint(1,size_w-1),random.randint(1,size_h-1))
-
-
-pL = pyautogui.center(pyautogui.locateOnScreen("izq.PNG"))
-pL = (pL[0]+6, pL[1]-2, 0, 0)
-pyautogui.moveTo(pL)
-
-pR = pyautogui.center(pyautogui.locateOnScreen("der.PNG"))
-pR = (pR[0]-4, pR[1]-3, 0, 0)
-pyautogui.moveTo(pR)
-
-pA = pyautogui.center(pyautogui.locateOnScreen("arriba.PNG"))
-pA = (pA[0]+6+9, pA[1]+6+4, 0, 0)
-pyautogui.moveTo(pA)
-
-pS = pyautogui.center(pyautogui.locateOnScreen("smiley.PNG"))
-pyautogui.click(pS[0]-4,pS[1]+6)
-pyautogui.click()
-
-
-# tile size 16px
-size_h = int((pL[1]-pA[1]+4)/16)
-size_w = int((pR[0]-pL[0])/16)
-
-grid = Grid(size_w,size_h)
-
-
-def mover(x,y):
-    pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
-
-def click(x,y):
-    pyautogui.click(pA[0]+x*16,pA[1]+y*16)
-    # sacar de bordes
-    if isDead():
-        return True
-    im = pyautogui.screenshot()
-    grid.eliminar_celda_bordes(x,y)
-    #celda_num = see_num_celda(x, y)
-    #grid.set_celda(x,y,celda_num)
-    flood_fill(im, x,y)
-    grid.eliminar_repetidos_bordes()
-    #grid.revisar_bordes_no_existentes()
-    return False
-
-
-def color(x,y):
-    c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
-    return c
-
-def flagear(x,y):
-    pyautogui.click(pA[0]+x*16,pA[1]+y*16, button='right')
-
 
 # (192,192,192) -> 0 y si 2 pixeles arriba es (255,255,255) -> sin clickear (9)
 # (0,0,255)     -> 1
@@ -78,7 +17,107 @@ def flagear(x,y):
 # (160, 0, 0)   -> 6
 # (0, 0, 0)     -> 7 revisar si se murio primero
 # (0, 0, 0) -> mina
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+random_available = []
+alive = True
+ganado = False
+offsets = [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)]
+
+def isDead(img):
+    pixel = img.getpixel((pS[0]-4,pS[1]+6))
+    if pixel[0] == 0:
+        global alive
+        alive = False
+        print("Se murio")
+        return True
+    else:
+        return False
+    
+def isGanado(img):
+    pixel = img.getpixel((pS[0]-7,pS[1]+10))
+    if pixel[0] == 0:
+        global ganado
+        ganado = True
+    return False
+
+def rPos():
+    while True:
+        while len(random_available) > 0:
+            rand_n = random.randint(0,len(random_available))
+            rand = random_available[rand_n]
+            if grid.get_celda(rand[0],rand[1]).isResuelta():
+                # eliminar current rand
+                random_available = random_available[:rand_n] +  random_available[rand_n+1:]
+                continue
+
+        x = random.randint(1,size_w-1)
+        y = random.randint(1,size_h-1)
+        if (x,y) in pos_used:
+            continue
+        if grid.get_simcelda(x,y) == 0:
+            return (x,y)
+        
+
+
+
+pL = pyautogui.center(pyautogui.locateOnScreen("izq.PNG"))
+pL = (pL[0]+6, pL[1]-2, 0, 0)
+#pyautogui.moveTo(pL)
+
+pR = pyautogui.center(pyautogui.locateOnScreen("der.PNG"))
+pR = (pR[0]-4, pR[1]-3, 0, 0)
+#pyautogui.moveTo(pR)
+
+pA = pyautogui.center(pyautogui.locateOnScreen("arriba.PNG"))
+pA = (pA[0]+6+9, pA[1]+6+4, 0, 0)
+#pyautogui.moveTo(pA)
+
+pS = pyautogui.center(pyautogui.locateOnScreen("smiley.PNG"))
+pyautogui.click(pS[0]-4,pS[1]+6)
+pyautogui.click()
+
+# tile size 16px
+size_h = int((pL[1]-pA[1]+4)/16)
+size_w = int((pR[0]-pL[0])/16)
+
+grid = Grid(size_w,size_h)
+
+
+
+
+def mover(x,y):
+    pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
+
+def click(x,y):
+    if grid.get_celda(x,y).isResuelta():
+        return
+    pyautogui.click(pA[0]+x*16,pA[1]+y*16)
+    im = pyautogui.screenshot()
+    if isDead(im):
+        return
+    if isGanado(im):
+        return
+    grid.eliminar_celda_bordes(x,y)
+    # temp lista bordes []
+    flood_fill(im, x,y)
+    # agregar lista bordes a bordes
+    grid.eliminar_repetidos_bordes()
+    bordes = grid.get_bordes() # iterar en la ultima lista de bordes
+    for pos in bordes:
+        resolver_celda(pos[0],pos[1])
+
+def color(x,y):
+    c = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
+    return c
+
+def flagear(x,y):
+    if grid.get_celda(x,y).isResuelta():
+        return
+    pyautogui.click(pA[0]+x*16,pA[1]+y*16, button='right')
+    grid.eliminar_celda_bordes(x,y)
+    grid.get_celda(x,y).set_resuelta()
+    grid.set_celda(x,y,10)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 def see_num_celda(img, x, y):
     color = img.getpixel( (pA[0]+x*16,pA[1]+y*16))
     if color == (192,192,192):
@@ -117,70 +156,95 @@ def flood_fill(img, x,y):
     flood_fill(img,x, y+1)
     flood_fill(img,x, y-1)
 
-
-
-def resolver_celda(x,y):
-    
-    if x < 0 or x >= size_w or y < 0 or y >= size_h:
-        return
-    actual = grid.get_simcelda(x,y)
-    
-    # ver celdas adyacentes
+def cantidad_disponibles(x,y): # esto es un numero adyacente a una celda no explorada
+    posiciones = []
+    flag_posiciones = []
     for of in offsets:
         x1 = x + of[0]
         y1 = y + of[1]
         if x1 < 0 or x1 >= size_w or y1 < 0 or y1 >= size_h:
             continue
+        num = grid.get_celda(x1,y1).getNum()
+        p = (x1, y1)
+        if num == 10:
+            flag_posiciones.append(p)
+        elif num == -1:
+            posiciones.append(p)
+    #print(" Cantidad disponible: ", len(posiciones), "Cantidad flags: ", len(flag_posiciones))
+    return posiciones, flag_posiciones
 
-        #check if resuelto
-        if grid.celda_isResuelta(x + of[0], y + of[1]):
-            # clickear sus numeros disponibles
-            pass
-        else:
-            pass
+def resolver_celda(x,y): # resolviendo una celda no explorada (borde)
+    # ver celdas adyacentes
+    sn = grid.get_simcelda(x,y)
+    if sn == 1:
+        grid.eliminar_celda_bordes(x,y)
+        return
+    for of in offsets:
+        x1 = x + of[0]
+        y1 = y + of[1]
+        if x1 < 0 or x1 >= size_w or y1 < 0 or y1 >= size_h:
+            continue
+        actual = grid.get_celda(x1,y1)
+        num = actual.getNum()
+        if num == -1:
+            continue
+        available, flags = cantidad_disponibles(x1,y1)
     
-#    resolver_celda(x+1, y)
-#    resolver_celda(x+1, y+1)
- #   resolver_celda(x, y+1)
-  #  resolver_celda(x-1, y+1)
-   # resolver_celda(x-1, y-1)
-    #resolver_celda(x, y-1)
-    #resolver_celda(x+1, y-1)
-
-
-
-    # si hay una celda resuelta todas sus celdas se liberan
-
-click(0,0)
-click(size_w-1,size_h-1)
-click(0,size_h-1)
-click(size_w-1,0)
+        if len(available)+len(flags) == num:
+            for pos in available:
+                flagear(pos[0],pos[1])
+            grid.eliminar_celda_bordes(x,y)
+        elif num == len(flags):
+            for pos in available:
+                click(pos[0],pos[1])
+                grid.eliminar_celda_bordes(pos[0],pos[1])
+            grid.eliminar_celda_bordes(x,y)
 
 pos_used = []
-for a in range(0,10):
-    repetido = True
-    while repetido:
-        x,y = rPos()
-        p = (x,y)
-        if p in pos_used:
-            continue
-        else: repetido = False
-    pos_used.append(p)
-    if click(x,y):
-        break
-    # por cada borde resolver
-    
 
 
 
+def buscar_available():
+    for x in range(0, size_h-1):
+        for y in range(0, size_w-1):
+            if grid.get_simcelda == 0:
+                random_available.append(x,y)
+def aux():
+    try:
+        while alive and not ganado:
+            grid.eliminar_repetidos_bordes()
+            bordes = grid.get_bordes() # iterar en la ultima lista de bordes
+            available, flags = cantidad_disponibles(bordes[0][0],bordes[0][1])
+            num = grid.get_celda().getNum()
+            if len(flags) == num and len(available) == 0:
+                grid.eliminar_celda_bordes(bordes[0][0],bordes[0][1])
+                
+    except Exception as e:
+        print(e)
+        
+
+def main():
+    click(0,0)
+    try:
+        while alive and not ganado:
+            x,y = rPos()
+            pos_used.append((x,y))
+            click(x,y)
+            # por cada borde resolver
+    except Exception as e:
+        print(e)
+        
+
+    #grid.mostrar()
+    #print("-"*(2*size_w+size_w))
+    #grid.mostrar_sim()
 
 
-grid.mostrar()
-print("-"*(2*size_w+size_w))
-#grid.mostrar_sim()
-bordes = grid.get_bordes()
-print("bordes ", bordes )
-#for i in range(0,len(bordes)):
-   # mover(bordes[i][0], bordes[i][1])
-   # time.sleep(0.1)
+t1 = threading.Thread(target=main)
+t2 = threading.Thread(target=aux)
 
+t1.start()
+t2.start()
+
+t1.join()
+t2.join()

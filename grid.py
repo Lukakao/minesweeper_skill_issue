@@ -10,7 +10,7 @@ class Grid:
         self.bordes = []
 
     def celda_isResuelta(self,x,y):
-        return self.grid.isResuelta()
+        return self.grid[x][y].isResuelta()
 
 
     def mostrar(self):
@@ -23,6 +23,8 @@ class Grid:
                     num = '□'
                 elif num == 0:
                     num = ' '
+                elif num == 10:
+                    num = '◄'
                 s = s + a + str(num) + a
             print(s)
 
@@ -33,8 +35,9 @@ class Grid:
                 s = s + str(self.simgrid[y][x]) + '  '
             print(s)
 
+   
+
     def revisar_bordes_no_existentes(self): # creo que esta no es tan necesaria, ya al tiro se puede saber si la celda no existente, no existe (lol)
-        print("len bordes2 ", len(self.bordes))
         for i in range(0,len(self.bordes)-1):
             actual = self.bordes[i]
             if self.simgrid[actual[0]][actual[1]] == 1:
@@ -45,7 +48,6 @@ class Grid:
         res = []
         [res.append(x) for x in self.bordes if x not in res]
         self.bordes = res
-        print("len bordes ", len(self.bordes))
         return self.bordes
     
     def eliminar_celda_bordes(self,x,y):
@@ -61,6 +63,8 @@ class Grid:
                         sup = self.bordes[i+1:]
                     res = inf + sup
                     self.bordes = res
+                    self.get_celda(x,y).set_resuelta()
+                    return
 
     def get_bordes(self):
         return self.bordes
@@ -101,7 +105,8 @@ class Celda:
     def isResuelta(self):
         return self.lista
 
-
+    def set_resuelta(self):
+        self.lista = True
 
 #g = Grid(5,16)
 #g.mostrar()
