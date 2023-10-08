@@ -5,6 +5,8 @@ from grid import Grid
 from grid import Celda
 pyautogui.FAILSAFE = True
 
+offsets = [(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)]
+
 def isDead():
     pixel = pyautogui.pixel(pS[0]-4,pS[1]+6)
     if pixel[0] == 0:
@@ -49,12 +51,13 @@ def click(x,y):
     # sacar de bordes
     if isDead():
         return True
+    im = pyautogui.screenshot()
     grid.eliminar_celda_bordes(x,y)
     #celda_num = see_num_celda(x, y)
     #grid.set_celda(x,y,celda_num)
-    flood_fill(x,y)
+    flood_fill(im, x,y)
     grid.eliminar_repetidos_bordes()
-    grid.revisar_bordes_no_existentes()
+    #grid.revisar_bordes_no_existentes()
     return False
 
 
@@ -76,10 +79,10 @@ def flagear(x,y):
 # (0, 0, 0)     -> 7 revisar si se murio primero
 # (0, 0, 0) -> mina
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
-def see_num_celda(x, y):
-    color = pyautogui.pixel(pA[0]+x*16,pA[1]+y*16)
+def see_num_celda(img, x, y):
+    color = img.getpixel( (pA[0]+x*16,pA[1]+y*16))
     if color == (192,192,192):
-        if pyautogui.pixel(pA[0]+x*16,pA[1]+y*16-2) == (255,255,255):
+        if img.getpixel((pA[0]+x*16,pA[1]+y*16-2)) == (255,255,255):
             return 9 # sin clickear
         else:
             return 0 # vacio
@@ -98,33 +101,44 @@ def see_num_celda(x, y):
     elif color == (128, 128, 128):
         return 5
 
-def flood_fill(x,y):
+def flood_fill(img, x,y):
     if x < 0 or x >= size_w or y < 0 or y >= size_h:
         return
     if grid.get_simcelda(x,y) == 1:
         return
-    celda_actual_color = see_num_celda(x,y)
+    celda_actual_color = see_num_celda(img,x,y)
     if celda_actual_color == 9:
         grid.add_borde((x,y))
         return
     grid.set_simcelda(x,y)
     grid.set_celda(x, y, celda_actual_color)
-    flood_fill(x+1, y)
-    flood_fill(x-1, y)
-    flood_fill(x, y+1)
-    flood_fill(x, y-1)
+    flood_fill(img,x+1, y)
+    flood_fill(img,x-1, y)
+    flood_fill(img,x, y+1)
+    flood_fill(img,x, y-1)
+
 
 
 def resolver_celda(x,y):
-    # ver celdas adyacentes
+    
     if x < 0 or x >= size_w or y < 0 or y >= size_h:
         return
     actual = grid.get_simcelda(x,y)
-    if actual == 1:
-        pass
+    
+    # ver celdas adyacentes
+    for of in offsets:
+        x1 = x + of[0]
+        y1 = y + of[1]
+        if x1 < 0 or x1 >= size_w or y1 < 0 or y1 >= size_h:
+            continue
 
-
-
+        #check if resuelto
+        if grid.celda_isResuelta(x + of[0], y + of[1]):
+            # clickear sus numeros disponibles
+            pass
+        else:
+            pass
+    
 #    resolver_celda(x+1, y)
 #    resolver_celda(x+1, y+1)
  #   resolver_celda(x, y+1)
@@ -137,7 +151,10 @@ def resolver_celda(x,y):
 
     # si hay una celda resuelta todas sus celdas se liberan
 
-
+click(0,0)
+click(size_w-1,size_h-1)
+click(0,size_h-1)
+click(size_w-1,0)
 
 pos_used = []
 for a in range(0,10):
