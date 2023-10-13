@@ -27,13 +27,15 @@ def isDead(img):
     if pixel[0] == 0:
         global alive
         alive = False
-        print("Se murio")
+        #grid.mostrar()
+        #print("-"*(2*size_w+size_w))
         return True
     else:
         return False
     
 def isGanado(img):
     pixel = img.getpixel((1,7))
+    print(pixel)
     if pixel[0] == 0:
         global ganado
         ganado = True
@@ -41,38 +43,49 @@ def isGanado(img):
 
 def rPos():
     while True:
-        x = random.randint(1,size_w-1)
-        y = random.randint(1,size_h-1)
+        x = random.randint(0,size_w-1)
+        y = random.randint(0,size_h-1)
         if (x,y) in pos_used:
             continue
-        #if grid.get_simcelda(x,y) == 0:
-        pos_used.append((x,y))
-        return (x,y)
+        if grid.get_simcelda(x,y) == 1:
+            continue
+
         
+        return (x,y)
+       # intentos -= 1
 
-pL = pyautogui.center(pyautogui.locateOnScreen("izq.PNG"))
-pL = (pL[0]+6, pL[1]-2, 0, 0)
-pyautogui.moveTo(pL)
+def celdas_disponibles():
+    simgrid = grid.get_simgrid()
+    available = []
+    for x in range(0,size_w-1):
+        for y in range(0,size_h-1):
+            if simgrid[y][x] == 0:
+                available.append((x,y))
 
-pR = pyautogui.center(pyautogui.locateOnScreen("der.PNG"))
-pR = (pR[0]-4, pR[1]-3, 0, 0)
-pyautogui.moveTo(pR)
 
-pA = pyautogui.center(pyautogui.locateOnScreen("arriba.PNG"))
-pA = (pA[0]+6+9, pA[1]+6+4, 0, 0)
-pyautogui.moveTo(pA)
-
-pS = pyautogui.center(pyautogui.locateOnScreen("smiley.PNG"))
-pyautogui.click(pS[0]-4,pS[1]+6)
+    
+pS = pyautogui.center(pyautogui.locateOnScreen("smiley2.PNG"))
+pyautogui.click(pS[0],pS[1])
 pyautogui.click()
-
+time.sleep(0.1)
+pL = pyautogui.center(pyautogui.locateOnScreen("izq2.PNG"))
+pL = (pL[0]-1, pL[1], 0, 0)
+#pyautogui.moveTo(pL)
+#time.sleep(20)
+pR = pyautogui.center(pyautogui.locateOnScreen("der2.PNG"))
+pR = (pR[0]-2, pR[1]-2, 0, 0)
+#pyautogui.moveTo(pR)
+#time.sleep(2)
+pA = pyautogui.center(pyautogui.locateOnScreen("ar2.PNG"))
+pA = (pA[0]+10, pA[1]+3, 0, 0)
 # tile size 16px
 size_h = int((pL[1]-pA[1]+4)/16)
 size_w = int((pR[0]-pL[0])/16)
-
-reg=(pA[0]-9, pA[1]-3, size_w*16, size_h*16)
+print(size_w,size_h)
+reg=(pA[0]-10, pA[1]-3, size_w*16, size_h*16)
+img = pyautogui.screenshot(region=reg)
+working = True
 grid = Grid(size_w,size_h)
-
 
 def mover(x,y):
     pyautogui.moveTo(pA[0]+x*16,pA[1]+y*16)
@@ -81,55 +94,59 @@ def click(x,y):
     cel = grid.get_celda(x,y)
     if cel.isResuelta():
         return
-    if cel.getNum() != -1:
-        return
     pyautogui.click(pA[0]+x*16,pA[1]+y*16)
     im = pyautogui.screenshot(region=reg)
-    imstate = pyautogui.screenshot(region=(pS[0]-8,pS[1]+3,6,10))
+    num = see_num_celda(im,x,y)
+    cel.setNum(num)
+    if num == 0:
+        cel.set_resuelta()
+    imstate = pyautogui.screenshot(region=(pS[0]-9,pS[1]+3,6,10))
     if isDead(imstate):
         return
     if isGanado(imstate):
         return
-    grid.eliminar_celda_bordes(x,y)
+    #grid.eliminar_celda_bordes(x,y)
     # temp lista bordes []
     flood_fill(im, x,y)
+    grid.mostrar()
     # agregar lista bordes a bordes
     grid.eliminar_repetidos_bordes()
     bordes = grid.get_bordes() # iterar en la ultima lista de bordes
+    print("Bordes: ", bordes)
     for pos in bordes:
         resolver_celda(pos[0],pos[1])
-
 
 def flagear(x,y):
     if grid.get_celda(x,y).isResuelta():
         return
     pyautogui.click(pA[0]+x*16,pA[1]+y*16, button='right')
-    grid.eliminar_celda_bordes(x,y)
+    #grid.eliminar_celda_bordes(x,y)
     grid.get_celda(x,y).set_resuelta()
     grid.set_celda(x,y,10)
+
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 def see_num_celda(img, x, y):
     color = img.getpixel( (x*16+9,y*16+3))
-
-    if color == (192,192,192):
+    if color == (189, 189, 189):
         if img.getpixel((x*16+9,y*16-2+3)) == (255,255,255):
             return 9 # sin clickear
         else:
             return 0 # vacio
-    elif color == (0,0,255):
+    elif color == (0, 0, 255):
         return 1
-    elif color == (0,128,0):
+    elif color == (0,123,0):
         return 2
-    elif color == (255,0,0):
+    elif color == (255, 0, 0):
         return 3
-    elif color == (0, 0, 128):
+    elif color == (0, 0, 123):
         return 4
-    elif color == (128, 0, 0):
+    elif color == (123, 0, 0):
         return 5
     elif color == (0, 0, 0):
         return 7
-    elif color == (128, 128, 128):
+    elif color == (123, 123, 123):
         return 8
+
 
 def flood_fill(img, x,y):
     if x < 0 or x >= size_w or y < 0 or y >= size_h:
@@ -197,19 +214,18 @@ def resolver_celda(x,y): # resolviendo una celda no explorada (borde)
 
 pos_used = []
 
-
 click(0,0)
+
+
 click(0,size_h-1)
-click(size_w-1,0)
 click(size_w-1,size_h-1)
 while alive and not ganado:
     x,y = rPos()
+    #print(x,y)
     click(x,y)
     # por cada borde resolver
 
-    
-
 grid.mostrar()
 print("-"*(2*size_w+size_w))
-grid.mostrar_sim()
+#grid.mostrar_sim()
 
